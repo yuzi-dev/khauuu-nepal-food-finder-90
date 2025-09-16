@@ -3,11 +3,13 @@ import { useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Map from "@/components/Map";
+import ShareModal from "@/components/ShareModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Star, 
   MapPin, 
@@ -32,7 +34,9 @@ import restaurantImage from "@/assets/restaurant-interior.jpg";
 const RestaurantDetail = () => {
   const { id } = useParams();
   const [isFavorite, setIsFavorite] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const { coordinates: userLocation } = useGeolocation();
+  const { toast } = useToast();
 
   // Mock restaurant data - in real app this would come from API
   const restaurant = {
@@ -121,6 +125,31 @@ const RestaurantDetail = () => {
     }
   ];
 
+  const handleSave = () => {
+    setIsFavorite(!isFavorite);
+    toast({
+      title: isFavorite ? "Restaurant Removed" : "Restaurant Saved!",
+      description: isFavorite 
+        ? "Restaurant removed from your favorites" 
+        : "Restaurant saved to your favorites",
+    });
+  };
+
+  const handleShare = () => {
+    setShareModalOpen(true);
+  };
+
+  const shareItem = {
+    id: restaurant.id,
+    type: 'restaurant' as const,
+    name: restaurant.name,
+    image: restaurant.images[0],
+    description: `${restaurant.cuisine} • ${restaurant.address}`,
+    rating: restaurant.rating,
+    price: restaurant.priceRange,
+    location: restaurant.address,
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -182,11 +211,11 @@ const RestaurantDetail = () => {
                     <Button
                       variant={isFavorite ? "default" : "outline"}
                       size="icon"
-                      onClick={() => setIsFavorite(!isFavorite)}
+                      onClick={handleSave}
                     >
                       <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
                     </Button>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" onClick={handleShare}>
                       <Share2 className="w-5 h-5" />
                     </Button>
                   </div>
@@ -423,6 +452,13 @@ const RestaurantDetail = () => {
       </main>
 
       <Footer />
+      
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        item={shareItem}
+      />
     </div>
   );
 };

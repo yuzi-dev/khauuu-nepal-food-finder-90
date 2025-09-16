@@ -1,11 +1,18 @@
 import RestaurantCard from "./RestaurantCard";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Heart, Share2 } from "lucide-react";
+import ShareModal from "@/components/ShareModal";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import momosImage from "@/assets/momos.jpg";
 import dalBhatImage from "@/assets/dal-bhat.jpg";
 import restaurantImage from "@/assets/restaurant-interior.jpg";
 
 const FeaturedSection = () => {
+  const [savedDishes, setSavedDishes] = useState<string[]>([]);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const { toast } = useToast();
   const featuredRestaurants = [
     {
       id: "1",
@@ -49,10 +56,39 @@ const FeaturedSection = () => {
   ];
 
   const popularDishes = [
-    { name: "Dal Bhat", restaurants: 120, image: dalBhatImage },
-    { name: "Momos", restaurants: 95, image: momosImage },
-    { name: "Newari Khaja", restaurants: 45, image: restaurantImage },
+    { id: "1", name: "Dal Bhat", restaurants: 120, image: dalBhatImage, description: "Traditional Nepali meal with lentils, rice, and vegetables" },
+    { id: "2", name: "Momos", restaurants: 95, image: momosImage, description: "Steamed dumplings with various fillings" },
+    { id: "3", name: "Newari Khaja", restaurants: 45, image: restaurantImage, description: "Traditional Newari feast with multiple dishes" },
   ];
+
+  const handleSaveDish = (dishId: string) => {
+    setSavedDishes(prev => {
+      const isAlreadySaved = prev.includes(dishId);
+      const newSavedDishes = isAlreadySaved 
+        ? prev.filter(id => id !== dishId)
+        : [...prev, dishId];
+      
+      toast({
+        title: isAlreadySaved ? "Dish Removed" : "Dish Saved!",
+        description: isAlreadySaved 
+          ? "Dish removed from your favorites" 
+          : "Dish saved to your favorites",
+      });
+      
+      return newSavedDishes;
+    });
+  };
+
+  const handleShareDish = (dish) => {
+    setSelectedItem({
+      id: dish.id,
+      type: 'food',
+      name: dish.name,
+      image: dish.image,
+      description: dish.description,
+    });
+    setShareModalOpen(true);
+  };
 
   return (
     <section className="py-16 bg-warm-cream">
@@ -86,7 +122,7 @@ const FeaturedSection = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {popularDishes.map((dish, index) => (
-              <div key={index} className="group cursor-pointer animate-slide-up" style={{ animationDelay: `${index * 0.2}s` }}>
+              <div key={dish.id} className="group cursor-pointer animate-slide-up" style={{ animationDelay: `${index * 0.2}s` }}>
                 <div className="relative overflow-hidden rounded-xl shadow-card group-hover:shadow-warm transition-all duration-300">
                   <img
                     src={dish.image}
@@ -94,6 +130,33 @@ const FeaturedSection = () => {
                     className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
+                  
+                  {/* Action Buttons */}
+                  <div className="absolute top-3 right-3 flex space-x-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className={`bg-background/80 hover:bg-background ${savedDishes.includes(dish.id) ? 'text-red-500' : 'text-white'}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSaveDish(dish.id);
+                      }}
+                    >
+                      <Heart className={`w-4 h-4 ${savedDishes.includes(dish.id) ? 'fill-current' : ''}`} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="bg-background/80 hover:bg-background text-white"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShareDish(dish);
+                      }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
                   <div className="absolute bottom-4 left-4 text-primary-foreground">
                     <h3 className="text-xl font-bold mb-1">{dish.name}</h3>
                     <p className="text-primary-foreground/80">{dish.restaurants} restaurants</p>
@@ -104,6 +167,13 @@ const FeaturedSection = () => {
           </div>
         </div>
       </div>
+      
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        item={selectedItem}
+      />
     </section>
   );
 };

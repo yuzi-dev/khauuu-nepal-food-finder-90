@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ShareModal from "@/components/ShareModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Star, 
   MapPin, 
@@ -22,6 +24,8 @@ import momosImage from "@/assets/momos.jpg";
 const FoodDetail = () => {
   const { id } = useParams();
   const [isFavorite, setIsFavorite] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const { toast } = useToast();
 
   // Mock food data - in real app this would come from API
   const food = {
@@ -55,6 +59,30 @@ const FoodDetail = () => {
       "Newari Style Dal Bhat",
       "Hill Region Dal Bhat"
     ]
+  };
+
+  const handleSave = () => {
+    setIsFavorite(!isFavorite);
+    toast({
+      title: isFavorite ? "Food Removed" : "Food Saved!",
+      description: isFavorite 
+        ? "Food removed from your favorites" 
+        : "Food saved to your favorites",
+    });
+  };
+
+  const handleShare = () => {
+    setShareModalOpen(true);
+  };
+
+  const shareItem = {
+    id: food.id,
+    type: 'food' as const,
+    name: food.name,
+    image: food.images[0],
+    description: food.description,
+    rating: food.rating,
+    price: food.priceRange,
   };
 
   const reviews = [
@@ -150,11 +178,11 @@ const FoodDetail = () => {
                     <Button
                       variant={isFavorite ? "default" : "outline"}
                       size="icon"
-                      onClick={() => setIsFavorite(!isFavorite)}
+                      onClick={handleSave}
                     >
                       <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
                     </Button>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" onClick={handleShare}>
                       <Share2 className="w-5 h-5" />
                     </Button>
                   </div>
@@ -314,6 +342,13 @@ const FoodDetail = () => {
       </main>
 
       <Footer />
+      
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        item={shareItem}
+      />
     </div>
   );
 };

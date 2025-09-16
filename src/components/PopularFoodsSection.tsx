@@ -1,14 +1,21 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Clock, TrendingUp } from "lucide-react";
+import { Star, Clock, TrendingUp, Heart, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import ShareModal from "@/components/ShareModal";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import momosImage from "@/assets/momos.jpg";
 import dalBhatImage from "@/assets/dal-bhat.jpg";
 import restaurantImage from "@/assets/restaurant-interior.jpg";
 
 const PopularFoodsSection = () => {
   const navigate = useNavigate();
+  const [savedFoods, setSavedFoods] = useState<string[]>([]);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedFood, setSelectedFood] = useState(null);
+  const { toast } = useToast();
 
   const popularFoods = [
     {
@@ -57,6 +64,45 @@ const PopularFoodsSection = () => {
     navigate(`/food/${foodId}`);
   };
 
+  const handleSave = (foodId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setSavedFoods(prev => {
+      const isAlreadySaved = prev.includes(foodId);
+      const newSavedFoods = isAlreadySaved 
+        ? prev.filter(id => id !== foodId)
+        : [...prev, foodId];
+      
+      toast({
+        title: isAlreadySaved ? "Food Removed" : "Food Saved!",
+        description: isAlreadySaved 
+          ? "Food removed from your favorites" 
+          : "Food saved to your favorites",
+      });
+      
+      return newSavedFoods;
+    });
+  };
+
+  const handleShare = (food, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setSelectedFood({
+      id: food.id,
+      type: 'food',
+      name: food.name,
+      image: food.image,
+      description: food.description,
+      rating: food.rating,
+      price: food.priceRange,
+    });
+    setShareModalOpen(true);
+  };
+
   return (
     <section className="py-16 bg-gradient-to-br from-warm-cream to-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -90,6 +136,18 @@ const PopularFoodsSection = () => {
                   <Badge variant="secondary" className="bg-background/90 text-foreground">
                     {food.category}
                   </Badge>
+                </div>
+                
+                {/* Save Button */}
+                <div className="absolute top-14 right-4">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`bg-background/80 hover:bg-background transition-colors ${savedFoods.includes(food.id) ? 'text-red-500' : 'text-gray-600'}`}
+                    onClick={(e) => handleSave(food.id, e)}
+                  >
+                    <Heart className={`w-4 h-4 ${savedFoods.includes(food.id) ? 'fill-current' : ''}`} />
+                  </Button>
                 </div>
               </div>
 
@@ -127,17 +185,27 @@ const PopularFoodsSection = () => {
                   <div className="text-sm text-muted-foreground">
                     Available at {food.restaurants} restaurants
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFoodClick(food.id);
-                    }}
-                  >
-                    Explore
-                  </Button>
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-muted-foreground hover:text-primary"
+                      onClick={(e) => handleShare(food, e)}
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFoodClick(food.id);
+                      }}
+                    >
+                      Explore
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -150,6 +218,13 @@ const PopularFoodsSection = () => {
           </Button>
         </div>
       </div>
+      
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        item={selectedFood}
+      />
     </section>
   );
 };

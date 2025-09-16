@@ -3,8 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Search, X, Send, Star, MapPin, Clock, Copy, Share2 } from "lucide-react";
+import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ShareItem {
@@ -26,55 +25,29 @@ interface ShareModalProps {
 }
 
 const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item }) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [message, setMessage] = useState("");
-  const [showExternalShare, setShowExternalShare] = useState(false);
   const { toast } = useToast();
 
-  const users = [
-    { id: "1", name: "Priya Sharma", username: "@priya.foodie", avatar: "/placeholder.svg", isFollowing: true },
-    { id: "2", name: "Raj Thapa", username: "@raj.eats", avatar: "/placeholder.svg", isFollowing: true },
-    { id: "3", name: "Maya Gurung", username: "@maya.kitchen", avatar: "/placeholder.svg", isFollowing: false },
-    { id: "4", name: "Food Lovers Group", username: "12 members", avatar: "/placeholder.svg", isGroup: true },
-    { id: "5", name: "Suman Khadka", username: "@suman.tastes", avatar: "/placeholder.svg", isFollowing: true },
+  const closeContacts = [
+    { id: "1", name: "Priya", avatar: "/placeholder.svg" },
+    { id: "2", name: "Raj", avatar: "/placeholder.svg" },
+    { id: "3", name: "Maya", avatar: "/placeholder.svg" },
+    { id: "4", name: "Suman", avatar: "/placeholder.svg" },
+    { id: "5", name: "Binod", avatar: "/placeholder.svg" },
+    { id: "6", name: "Kamala", avatar: "/placeholder.svg" },
   ];
 
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const toggleUserSelection = (userId: string) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
-  };
-
-  const handleShare = () => {
-    if (selectedUsers.length > 0) {
-      // Handle sharing logic here
-      console.log("Sharing to:", selectedUsers, "Message:", message);
-      onClose();
-      setSelectedUsers([]);
-      setMessage("");
-    }
-  };
-
   const handleCopyLink = () => {
-    const shareUrl = `${window.location.origin}/offer/${item?.id}`;
+    const shareUrl = `${window.location.origin}/${item?.type}/${item?.id}`;
     navigator.clipboard.writeText(shareUrl);
     toast({
-      title: "Link Copied!",
-      description: "Share link has been copied to clipboard",
+      title: "Link copied",
+      description: "Link has been copied to your clipboard",
     });
   };
 
   const handleExternalShare = (platform: string) => {
-    const shareUrl = `${window.location.origin}/offer/${item?.id}`;
-    const shareText = `Check out this amazing offer: ${item?.name}!`;
+    const shareUrl = `${window.location.origin}/${item?.type}/${item?.id}`;
+    const shareText = `Check out this ${item?.type}: ${item?.name}!`;
     
     let url = "";
     switch (platform) {
@@ -84,19 +57,17 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item }) => {
       case "facebook":
         url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
         break;
-      case "instagram":
-        // Instagram doesn't support direct URL sharing, so copy to clipboard
-        navigator.clipboard.writeText(shareUrl);
-        toast({
-          title: "Link Copied!",
-          description: "Paste this link in your Instagram story or post",
-        });
-        return;
-      case "viber":
-        url = `viber://forward?text=${encodeURIComponent(shareText + " " + shareUrl)}`;
+      case "messenger":
+        url = `fb-messenger://share?link=${encodeURIComponent(shareUrl)}`;
+        break;
+      case "twitter":
+        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
         break;
       case "telegram":
         url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+        break;
+      case "viber":
+        url = `viber://forward?text=${encodeURIComponent(shareText + " " + shareUrl)}`;
         break;
     }
     
@@ -106,171 +77,120 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item }) => {
   };
 
   const externalPlatforms = [
-    { id: "copy", name: "Copy Link", icon: "📋", color: "bg-gray-500" },
-    { id: "whatsapp", name: "WhatsApp", icon: "📱", color: "bg-green-500" },
-    { id: "facebook", name: "Facebook", icon: "📘", color: "bg-blue-600" },
-    { id: "instagram", name: "Instagram", icon: "📷", color: "bg-pink-500" },
-    { id: "viber", name: "Viber", icon: "💜", color: "bg-purple-500" },
-    { id: "telegram", name: "Telegram", icon: "✈️", color: "bg-blue-400" },
+    { 
+      id: "story", 
+      name: "Add to story", 
+      icon: "📱", 
+      bgColor: "bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400" 
+    },
+    { 
+      id: "copy", 
+      name: "Copy link", 
+      icon: "🔗", 
+      bgColor: "bg-gray-100 border border-gray-300" 
+    },
+    { 
+      id: "whatsapp", 
+      name: "WhatsApp", 
+      icon: "📞", 
+      bgColor: "bg-green-500" 
+    },
+    { 
+      id: "messenger", 
+      name: "Messenger", 
+      icon: "💬", 
+      bgColor: "bg-blue-500" 
+    },
+    { 
+      id: "facebook", 
+      name: "Facebook", 
+      icon: "📘", 
+      bgColor: "bg-blue-600" 
+    },
+    { 
+      id: "twitter", 
+      name: "Twitter", 
+      icon: "🐦", 
+      bgColor: "bg-black" 
+    },
+    { 
+      id: "telegram", 
+      name: "Telegram", 
+      icon: "✈️", 
+      bgColor: "bg-blue-400" 
+    },
+    { 
+      id: "viber", 
+      name: "Viber", 
+      icon: "💜", 
+      bgColor: "bg-purple-500" 
+    },
   ];
 
   if (!item) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-0 gap-0">
+      <DialogContent className="max-w-sm p-0 gap-0 bg-white rounded-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <div className="flex items-center space-x-2">
-            <h3 className="font-semibold text-foreground">Share</h3>
-            <div className="flex items-center space-x-1">
-              <Button
-                variant={!showExternalShare ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setShowExternalShare(false)}
-                className="text-xs"
-              >
-                Friends
-              </Button>
-              <Button
-                variant={showExternalShare ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setShowExternalShare(true)}
-                className="text-xs"
-              >
-                <Share2 className="w-3 h-3 mr-1" />
-                External
-              </Button>
-            </div>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="w-4 h-4" />
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h3 className="font-semibold text-black text-lg">Share</h3>
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
+            <X className="w-5 h-5 text-gray-700" />
           </Button>
         </div>
 
-        {/* Share Item Preview */}
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center space-x-3 bg-muted rounded-lg p-3">
-            <img 
-              src={item.image} 
-              alt={item.name}
-              className="w-12 h-12 rounded-lg object-cover"
-            />
-            <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-foreground truncate">{item.name}</h4>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                {item.rating && (
-                  <div className="flex items-center space-x-1">
-                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                    <span>{item.rating}</span>
-                  </div>
-                )}
-                {item.price && <span>{item.price}</span>}
-                {item.discount && (
-                  <Badge variant="destructive" className="text-xs">
-                    {item.discount}
-                  </Badge>
-                )}
+        {/* Close Friends Section */}
+        <div className="px-4 pt-4 pb-2">
+          <div className="flex space-x-4 overflow-x-auto pb-2">
+            {closeContacts.map((contact) => (
+              <div key={contact.id} className="flex flex-col items-center space-y-1 min-w-0">
+                <div className="relative">
+                  <Avatar className="w-14 h-14 border-2 border-gray-200">
+                    <AvatarImage src={contact.avatar} />
+                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white font-medium">
+                      {contact.name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+                <span className="text-xs text-gray-700 truncate w-16 text-center">
+                  {contact.name}
+                </span>
               </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {!showExternalShare ? (
-          <>
-            {/* Search Users */}
-            <div className="p-4 border-b border-border">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search people..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 bg-background"
-                />
-              </div>
-            </div>
-
-            {/* Users List */}
-            <div className="max-h-60 overflow-y-auto">
-              {filteredUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-3 hover:bg-muted/50 cursor-pointer"
-                  onClick={() => toggleUserSelection(user.id)}
-                >
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={user.avatar} />
-                      <AvatarFallback>{user.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-foreground">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">{user.username}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {!user.isGroup && !user.isFollowing && (
-                      <Badge variant="secondary" className="text-xs">Follow</Badge>
-                    )}
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      selectedUsers.includes(user.id)
-                        ? 'bg-primary border-primary'
-                        : 'border-muted-foreground'
-                    }`}>
-                      {selectedUsers.includes(user.id) && (
-                        <div className="w-3 h-3 bg-white rounded-full"></div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Message Input */}
-            <div className="p-4 border-t border-border">
-              <Input
-                placeholder="Write a message..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="mb-3"
-              />
-              <Button 
-                onClick={handleShare}
-                disabled={selectedUsers.length === 0}
-                className="w-full"
+        {/* External Share Grid */}
+        <div className="px-4 pb-6">
+          <div className="grid grid-cols-4 gap-4">
+            {externalPlatforms.map((platform) => (
+              <button
+                key={platform.id}
+                className="flex flex-col items-center space-y-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={() => {
+                  if (platform.id === "copy") {
+                    handleCopyLink();
+                  } else if (platform.id === "story") {
+                    toast({
+                      title: "Add to Story",
+                      description: "Feature coming soon!",
+                    });
+                  } else {
+                    handleExternalShare(platform.id);
+                  }
+                }}
               >
-                <Send className="w-4 h-4 mr-2" />
-                Send to {selectedUsers.length} {selectedUsers.length === 1 ? 'person' : 'people'}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* External Share Options */}
-            <div className="p-4">
-              <h4 className="font-medium text-foreground mb-4">Share Externally</h4>
-              <div className="grid grid-cols-2 gap-3">
-                {externalPlatforms.map((platform) => (
-                  <Button
-                    key={platform.id}
-                    variant="outline"
-                    className="flex items-center space-x-2 p-4 h-auto"
-                    onClick={() => platform.id === "copy" ? handleCopyLink() : handleExternalShare(platform.id)}
-                  >
-                    <span className="text-lg">{platform.icon}</span>
-                    <span className="text-sm font-medium">{platform.name}</span>
-                  </Button>
-                ))}
-              </div>
-              <div className="mt-4 p-3 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Share this amazing {item?.type} with your friends and family!
-                </p>
-              </div>
-            </div>
-          </>
-        )}
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-lg ${platform.bgColor}`}>
+                  {platform.icon}
+                </div>
+                <span className="text-xs text-gray-700 text-center leading-tight">
+                  {platform.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
