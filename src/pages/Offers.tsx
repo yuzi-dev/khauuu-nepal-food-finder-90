@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import ShareModal from "@/components/ShareModal";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Star, 
   MapPin, 
@@ -15,7 +17,10 @@ import {
   Calendar,
   Search,
   Filter,
-  TrendingDown
+  TrendingDown,
+  Share2,
+  Heart,
+  HeartHandshake
 } from "lucide-react";
 import dalBhatImage from "@/assets/dal-bhat.jpg";
 import momosImage from "@/assets/momos.jpg";
@@ -24,6 +29,10 @@ import restaurantImage from "@/assets/restaurant-interior.jpg";
 const Offers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState(null);
+  const [savedOffers, setSavedOffers] = useState<string[]>([]);
+  const { toast } = useToast();
 
   const offers = [
     {
@@ -149,6 +158,38 @@ const Offers = () => {
     
     return matchesSearch && matchesCategory;
   });
+
+  const handleShare = (offer) => {
+    setSelectedOffer({
+      id: offer.id,
+      type: 'offer',
+      name: offer.title,
+      image: offer.image,
+      description: offer.description,
+      rating: offer.rating,
+      price: offer.discountedPrice,
+      discount: offer.discount,
+    });
+    setShareModalOpen(true);
+  };
+
+  const handleSave = (offerId: string) => {
+    setSavedOffers(prev => {
+      const isAlreadySaved = prev.includes(offerId);
+      const newSavedOffers = isAlreadySaved 
+        ? prev.filter(id => id !== offerId)
+        : [...prev, offerId];
+      
+      toast({
+        title: isAlreadySaved ? "Offer Removed" : "Offer Saved!",
+        description: isAlreadySaved 
+          ? "Offer removed from your favorites" 
+          : "Offer saved to your favorites",
+      });
+      
+      return newSavedOffers;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -320,6 +361,28 @@ const Offers = () => {
                         View Restaurant
                       </Button>
                     </div>
+
+                    {/* Share and Save Buttons */}
+                    <div className="flex space-x-2 mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleShare(offer)}
+                      >
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Share
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleSave(offer.id)}
+                      >
+                        <Heart className={`w-4 h-4 mr-2 ${savedOffers.includes(offer.id) ? 'fill-current text-red-500' : ''}`} />
+                        {savedOffers.includes(offer.id) ? 'Saved' : 'Save'}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -343,6 +406,13 @@ const Offers = () => {
       </main>
 
       <Footer />
+      
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        item={selectedOffer}
+      />
     </div>
   );
 };
